@@ -28,25 +28,26 @@ architecture doc, or invoke the skill directly:
 ```
 
 Claude will read the project's own docs, entry points, data model, and
-config, then produce and publish a single-page HTML artifact covering:
+config, then produce:
 
-- Overview & mental model
-- Core concepts glossary
-- State machines (one per stateful entity)
-- Main protocol/loop diagram (sequence or decision-flow)
-- Per-flow procedures (numbered steps)
-- Safety/guardrail systems
-- Config & limits reference
-- Integration flows (if any)
-- CLI/API surface reference
-- Module map
+- a published single-page HTML **Artifact** covering overview & mental
+  model, core concepts, state machines, the main protocol/decision-flow
+  diagram, per-flow procedures, safety/guardrail systems, config & limits,
+  integration flows, CLI/API surface, and a module map;
+- a **`MANUAL.md`** committed to the project root (configurable path) —
+  the same content, version-controlled;
+- optionally, a **PDF** — pass `--pdf` (`/field-manual --pdf`) or set a
+  standing `field-manual pdf: true` in the project's `CLAUDE.md`. Off by
+  default; needs a local Chromium/Chrome for the print-to-PDF render.
 
 ## Files
 
 - `SKILL.md` — the skill definition: research process, section structure,
   build instructions, output contract.
-- `template.html` — the fixed CSS design system and page shell every
-  generated manual is built from.
+- `template.html` — the fixed CSS design system and page shell the
+  Artifact is built from.
+- `print.html` — the standalone (self-contained, non-Artifact-hosted)
+  version of that same design used for PDF rendering.
 
 ## Design system
 

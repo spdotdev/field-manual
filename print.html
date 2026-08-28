@@ -1,0 +1,243 @@
+<!doctype html>
+<html data-theme="light" lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{PROJECT_NAME}} Field Manual</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/*
+  Standalone, self-contained version of template.html for headless-Chrome
+  print-to-PDF. Differences from template.html (which is a fragment the
+  Artifact host wraps and themes):
+    - full <html>/<head>/<body> document, forced to the light palette
+      (data-theme="light") since a printed page is read on paper/on a
+      light screen — no dark-mode branch needed here.
+    - mermaid.js loaded from a CDN and initialized at the bottom, since
+      there is no Artifact host to render <pre class="mermaid"> natively.
+    - a @media print block: hides the sticky TOC (useless on paper),
+      avoids breaking a diagram/card/table across a page boundary, sets
+      @page margins.
+  Everything else (tokens, component classes, section structure) is
+  identical to template.html on purpose — fill in content the same way.
+*/
+:root{
+  --ink:#12161d; --paper:#f5f2ea;
+  --bg:var(--paper); --surface:#ffffff; --surface-2:#ece7d9;
+  --text:#1c2128; --text-mute:#5c6472; --text-faint:#8a8f99;
+  --border:#ddd6c4;
+  --accent:#1f7a68; --accent-soft:#e3f0ec;
+  --warn:#a8671e; --warn-soft:#f5e6cf;
+  --stop:#a3372c; --stop-soft:#f6e0dc;
+  --ok:#3f7d4f; --ok-soft:#e3f0e5;
+  --code-bg:#eee8d8;
+  --font-display:'IBM Plex Sans',system-ui,sans-serif;
+  --font-body:'IBM Plex Sans',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,'SF Mono',Consolas,monospace;
+}
+
+*{box-sizing:border-box;}
+body{
+  background:var(--bg); color:var(--text); font-family:var(--font-body);
+  font-size:16px; line-height:1.65; margin:0;
+  -webkit-font-smoothing:antialiased;
+}
+a{ color:var(--accent); text-decoration:none; }
+a:hover{ text-decoration:underline; }
+
+h1,h2,h3,h4{
+  font-family:var(--font-display); font-weight:700; text-wrap:balance;
+  color:var(--text); margin:0 0 .5em;
+}
+p{ margin:0 0 1em; max-width:68ch; color:var(--text); }
+p.lede{ color:var(--text-mute); }
+
+code, .pill, .mono{ font-family:var(--font-mono); }
+code{
+  background:var(--code-bg); padding:.15em .4em; border-radius:4px;
+  font-size:.88em; color:var(--text);
+}
+
+.eyebrow{
+  font-family:var(--font-mono); font-size:.72rem; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--accent); font-weight:600;
+  margin:0 0 .6em;
+}
+
+.shell{
+  display:grid; grid-template-columns:260px minmax(0,1fr);
+  max-width:1280px; margin:0 auto;
+}
+
+.toc{
+  position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  padding:2.5rem 1.25rem 2rem 1.5rem; border-right:1px solid var(--border);
+}
+.toc-title{
+  font-family:var(--font-mono); font-size:.78rem; font-weight:600;
+  color:var(--text-faint); text-transform:uppercase; letter-spacing:.1em;
+  margin-bottom:1rem;
+}
+.toc nav{ display:flex; flex-direction:column; gap:.15rem; }
+.toc a{
+  color:var(--text-mute); font-size:.86rem; padding:.32rem .5rem;
+  border-radius:6px; display:block;
+}
+.toc .grp{ margin-top:1rem; }
+.toc .grp:first-child{ margin-top:0; }
+
+.main{ padding:0 1.5rem 6rem; min-width:0; }
+.hero{
+  padding:4rem 0 2.5rem; border-bottom:1px solid var(--border);
+  margin-bottom:2.5rem;
+}
+.hero h1{ font-size:clamp(2rem,4vw,2.7rem); letter-spacing:-.01em; }
+.hero .role-strip{ display:flex; flex-wrap:wrap; gap:.6rem; margin-top:1.4rem; }
+.role-chip{
+  font-family:var(--font-mono); font-size:.78rem; padding:.4rem .7rem;
+  border:1px solid var(--border); border-radius:8px; color:var(--text-mute);
+  background:var(--surface);
+}
+.role-chip b{ color:var(--text); font-weight:600; }
+
+section{ margin:0 0 3.5rem; }
+section > h2{
+  font-size:1.5rem; padding-bottom:.6rem; border-bottom:1px solid var(--border);
+  margin-bottom:1.2rem;
+}
+section > h3{ font-size:1.12rem; margin-top:1.8rem; }
+.section-num{
+  font-family:var(--font-mono); color:var(--text-faint); font-weight:500;
+  margin-right:.5em; font-size:.85em;
+}
+
+.diagram{
+  background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  padding:1.25rem; margin:1.2rem 0 1.6rem;
+}
+.diagram .mermaid{ display:flex; justify-content:center; }
+.diagram .mermaid svg{ max-width:100%; height:auto; }
+.diagram .cap{
+  font-family:var(--font-mono); font-size:.74rem; color:var(--text-faint);
+  margin-top:.8rem; padding-top:.6rem; border-top:1px dashed var(--border);
+}
+
+.pill{
+  display:inline-flex; align-items:center; font-size:.76rem; font-weight:500;
+  padding:.15em .55em; border-radius:5px; white-space:nowrap;
+  border:1px solid transparent;
+}
+.pill-neutral{ background:var(--surface-2); color:var(--text-mute); }
+.pill-ok{ background:var(--ok-soft); color:var(--ok); }
+.pill-warn{ background:var(--warn-soft); color:var(--warn); }
+.pill-stop{ background:var(--stop-soft); color:var(--stop); }
+.pill-accent{ background:var(--accent-soft); color:var(--accent); }
+
+.grid{ display:grid; gap:1rem; }
+.grid-2{ grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); }
+.card{
+  background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  padding:1.1rem 1.25rem;
+}
+.card h4{ font-size:.95rem; display:flex; align-items:center; gap:.5rem; margin-bottom:.4rem; }
+.card p{ font-size:.92rem; color:var(--text-mute); margin-bottom:0; }
+.card code{ font-size:.82em; }
+
+.table-wrap{ margin:1rem 0 1.6rem; }
+table{ border-collapse:collapse; width:100%; font-size:.88rem; }
+th,td{
+  text-align:left; padding:.55rem .75rem; border-bottom:1px solid var(--border);
+  vertical-align:top;
+}
+th{
+  font-family:var(--font-mono); font-size:.72rem; text-transform:uppercase;
+  letter-spacing:.06em; color:var(--text-faint); font-weight:600;
+  border-bottom:1px solid var(--text-faint);
+}
+td.num, th.num{ font-family:var(--font-mono); font-variant-numeric:tabular-nums; }
+tr:last-child td{ border-bottom:none; }
+
+ol.steps{ list-style:none; padding:0; margin:1rem 0; counter-reset:step; }
+ol.steps > li{
+  counter-increment:step; position:relative; padding-left:2.6rem; margin-bottom:1rem;
+}
+ol.steps > li::before{
+  content:counter(step); position:absolute; left:0; top:0;
+  width:1.9rem; height:1.9rem; border-radius:6px; background:var(--accent-soft);
+  color:var(--accent); font-family:var(--font-mono); font-weight:600; font-size:.85rem;
+  display:flex; align-items:center; justify-content:center;
+}
+ol.steps > li > p{ margin-bottom:.3rem; }
+ol.steps .sub{ font-size:.88rem; color:var(--text-mute); margin:.3rem 0 0; }
+
+.callout{
+  border-left:3px solid var(--accent); background:var(--accent-soft);
+  padding:.9rem 1.1rem; border-radius:0 8px 8px 0; margin:1.2rem 0; font-size:.92rem;
+}
+.callout.warn{ border-color:var(--warn); background:var(--warn-soft); }
+.callout.stop{ border-color:var(--stop); background:var(--stop-soft); }
+.callout p:last-child{ margin-bottom:0; }
+.callout strong{ color:var(--text); }
+
+hr.rule{ border:none; border-top:1px solid var(--border); margin:2.5rem 0; }
+
+footer{
+  padding:2.5rem 0 1rem; color:var(--text-faint); font-size:.82rem;
+  border-top:1px solid var(--border); margin-top:3rem;
+}
+
+/* ---- Print-specific ---- */
+@page{ margin:16mm 14mm; }
+@media print{
+  .toc{ display:none; }
+  .shell{ display:block; max-width:100%; }
+  .main{ padding:0; }
+  body{ font-size:11.5pt; }
+  a{ color:var(--text); text-decoration:underline; }
+  .diagram, .card, table, ol.steps > li, .callout{ break-inside:avoid; }
+  section{ break-inside:avoid-page; }
+  section > h2{ break-after:avoid; }
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <aside class="toc">
+    <div class="toc-title">{{PROJECT_NAME}}</div>
+    <nav>
+      <!-- same TOC links as the HTML artifact; hidden by @media print but
+           useful if this file is also opened in a browser directly -->
+    </nav>
+  </aside>
+
+  <main class="main">
+    <!--
+      Paste the exact same section content built for template.html here —
+      hero, all numbered sections, footer. Do not regenerate it from
+      scratch; this file and the Artifact must render identical content
+      (see SKILL.md's PDF generation step and the "stay in sync" rule in
+      the output contract).
+    -->
+  </main>
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+      primaryColor: '#e3f0ec',
+      primaryBorderColor: '#1f7a68',
+      primaryTextColor: '#1c2128',
+      lineColor: '#8a8f99',
+      tertiaryColor: '#ece7d9'
+    }
+  });
+  window.__mermaidDone = false;
+  mermaid.run().finally(() => { window.__mermaidDone = true; });
+</script>
+</body>
+</html>

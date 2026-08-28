@@ -5,7 +5,7 @@ description: Generate a detailed, visually-designed "field manual" documentation
 
 # field-manual
 
-Produces the same field manual content in two forms every run:
+Produces the same field manual content in up to three forms every run:
 
 1. A published HTML **Artifact** — mental model, state machines,
    main-loop/protocol diagram, per-flow procedures, safety/guardrail
@@ -17,6 +17,12 @@ Produces the same field manual content in two forms every run:
    deliverable and doesn't live in the repo. Same content, same section
    order, mermaid diagrams as fenced ` ```mermaid ` code blocks (GitHub and
    most Markdown viewers render these natively).
+3. A **PDF**, generated only when asked (see Configuration) — a
+   print-ready rendering of the same content for sharing outside a
+   terminal/browser (email, a printed copy, a doc that outlives the
+   session's Artifact link).
+
+Forms 1 and 2 always run. Form 3 is opt-in — see **Configuration**.
 
 Do not skip the research phase to save time. A field manual that's wrong
 about the code is worse than no field manual — it's easier to trust than
@@ -44,6 +50,29 @@ default. Always confirm the resolved path with the user before writing if
 a file already exists there — overwrite only after they confirm, and offer
 to diff/summarize what changed instead of silently clobbering hand-edited
 content.
+
+### PDF (optional)
+
+Off by default — the HTML Artifact and Markdown file cover the normal
+case, and PDF generation needs a local Chromium/Chrome and takes a real
+extra step, so don't spend it unasked.
+
+Turn it on for one run with a `--pdf` flag anywhere in the skill argument:
+
+```
+/field-manual --pdf
+/field-manual docs/ARCHITECTURE.md --pdf
+```
+
+Or set a standing default the same way as the output path:
+
+```
+field-manual pdf: true
+```
+
+PDF output path: same directory and basename as the resolved Markdown
+path, with a `.pdf` extension (`MANUAL.md` → `MANUAL.pdf`), unless the
+`--pdf` flag is followed by an explicit path (`--pdf docs/manual.pdf`).
 
 ## Process
 
@@ -191,13 +220,52 @@ between every section.
    rules say to commit freely; report that it's written and let normal
    commit review happen.
 
+### 5. Generate the PDF (only if enabled — see Configuration)
+
+1. Copy `print.html` (next to this file) as the starting point — it is
+   `template.html`'s content structure and CSS as a **standalone** document
+   (own `<html>`/`<head>`/`<body>`, forced light palette, a `mermaid.js`
+   import since there's no Artifact host to render `<pre class="mermaid">`
+   natively) plus a `@media print` block. Fill it with the exact same
+   section content already built for the Artifact and the Markdown file —
+   do not re-author it a third time.
+2. Save the filled file to a temp path (e.g. the project's scratch/temp
+   directory, never committed to the repo).
+3. Render it to PDF with headless Chromium. Try, in order, whichever
+   binary exists on `PATH` — `google-chrome`, `chromium`, `chromium-browser`
+   — and stop at the first one found:
+   ```sh
+   <binary> --headless=new --disable-gpu --no-pdf-header-footer \
+     --virtual-time-budget=8000 \
+     --print-to-pdf="<resolved PDF path>" \
+     "<temp print.html path>"
+   ```
+   `--virtual-time-budget=8000` gives the page 8s to load fonts and run
+   `mermaid.run()` before Chrome prints — the diagrams are blank in the
+   PDF without it. If a manual's diagrams are unusually numerous or heavy,
+   raise the budget rather than shipping a PDF with missing diagrams.
+4. If no Chromium-family binary is found on `PATH`, don't fail silently:
+   tell the user PDF generation needs `google-chrome` or `chromium`
+   installed (or offer to try the Playwright MCP browser tools if that
+   plugin is connected in this session — `browser_navigate` to the local
+   file, then a PDF-capable action if the tool schema exposes one), and
+   confirm whether they want to proceed without a PDF instead of retrying
+   blindly.
+5. Confirm the PDF was written and has a non-trivial size (an empty/near-
+   empty file usually means the render failed silently or the virtual time
+   budget was too short) before reporting success.
+6. Send it to the user with the `SendUserFile` tool — a generated PDF is a
+   deliverable the user should see, not just a path mentioned in text.
+
 ## Output contract
 
-Both the Artifact and the Markdown file must, at minimum:
+The Artifact and the Markdown file (and the PDF, when generated) must, at
+minimum:
 
-- Use `template.html`'s CSS and layout shell unmodified for the Artifact
-  (content only); the Markdown file carries the same content structure
-  without the CSS, since Markdown has no styling of its own.
+- Use `template.html`'s (or, for the PDF, `print.html`'s) CSS and layout
+  shell unmodified — content only; the Markdown file carries the same
+  content structure without the CSS, since Markdown has no styling of its
+  own.
 - Cover every section in step 2's list that has real material in the repo.
 - Contain at least one `stateDiagram-v2` (if the project has stateful
   entities), one `flowchart` (the main decision/protocol logic), and one
@@ -205,8 +273,9 @@ Both the Artifact and the Markdown file must, at minimum:
   has not done the job this skill exists for.
 - Contain zero placeholder/lorem text and zero claims not traceable to the
   actual source tree.
-- Stay in sync with each other — they are two renderings of one set of
-  facts gathered once in step 1, never independently drifting drafts.
+- Stay in sync with each other — all forms produced in one run are
+  renderings of one set of facts gathered once in step 1, never
+  independently drifting drafts.
 
 If the project genuinely lacks material for a section (e.g. no external
 integrations), omit that section rather than inventing content — say
